@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// FIX: Initialize GoogleGenAI with process.env.API_KEY as per guidelines.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// FIX: Initialize GoogleGenAI with environment variable (will be undefined if not set)
+const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
+const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 /**
  * Client-Side Bill Forecaster (Free Tier)
@@ -12,9 +13,6 @@ export const forecastBillAmount = async (
   billType: string,
   previousBills: number[]
 ): Promise<{ amount: number; explanation:string; }> => {
-  console.log(`Forecasting next bill for: ${billType}`);
-  console.log(`Based on previous amounts: ${previousBills.join(', ')}`);
-
   // Simulate a slight delay for user experience
   await new Promise(resolve => setTimeout(resolve, 300));
 
@@ -54,6 +52,10 @@ export const predictBillAmountWithAI = async (
     
   const prompt = `You are a financial assistant. A user wants to predict their next bill amount for "${billType}". Their previous payments in INR were [${previousBills.join(', ')}]. Analyze this trend and predict the next bill amount. Provide a brief, one-sentence explanation for your prediction, mentioning the trend (e.g., upward, stable, fluctuating).`;
 
+  if (!ai) {
+    throw new Error("Gemini API key not configured. Please set VITE_GEMINI_API_KEY in your environment variables.");
+  }
+
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
@@ -77,7 +79,10 @@ export const predictBillAmountWithAI = async (
       },
     });
 
-    const result = JSON.parse(response.text.trim());
+    const result = JSON.parse(response.text?.trim() || '{}');
+    if (!result.predictedAmount || !result.explanation) {
+      throw new Error("Invalid response from AI model");
+    }
     return { amount: result.predictedAmount, explanation: result.explanation };
 
   } catch (error) {

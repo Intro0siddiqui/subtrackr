@@ -45,7 +45,7 @@ const getDaysUntilDue = (dueDate?: Date) => {
 };
 
 
-const Dashboard: React.FC<DashboardProps> = ({ user, bills, subscriptions, onSaveBill, onDeleteBill, onSaveSubscription, onDeleteSubscription }) => {
+const Dashboard: React.FC<DashboardProps> = ({ bills, subscriptions, onSaveBill, onDeleteBill, onSaveSubscription, onDeleteSubscription }) => {
   const [isBillModalOpen, setBillModalOpen] = useState(false);
   const [isSubModalOpen, setSubModalOpen] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | undefined>(undefined);
