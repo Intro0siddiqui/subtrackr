@@ -115,7 +115,7 @@ const Auth: React.FC = () => {
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white/50 dark:bg-background-dark/50 p-8 shadow-lg backdrop-blur-sm">
         <div>
           <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Welcome back</h2>
-          <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">Sign in to continue to SubTrackr</p>
+          <p className="mt-2 text-center text-sm text-slate-600 dark:text-slate-400">Sign in to continue to SubDash</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-4">

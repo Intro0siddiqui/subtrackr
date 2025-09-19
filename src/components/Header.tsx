@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ session }) => {
                 <path d="M2 12L12 17L22 12"></path>
             </svg>
         </div>
-        <h1 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">SubTrackr</h1>
+        <h1 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">SubDash</h1>
       </div>
       {session && (
         <div className="flex items-center gap-4">

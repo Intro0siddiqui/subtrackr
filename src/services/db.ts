@@ -1,6 +1,6 @@
 import type { Bill, Subscription } from '../types';
 
-const DB_NAME = 'SubTrackrDB';
+const DB_NAME = 'SubDashDB';
 const DB_VERSION = 1;
 const BILLS_STORE = 'bills';
 const SUBS_STORE = 'subscriptions';
