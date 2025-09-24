@@ -8,13 +8,20 @@ const Auth: React.FC = () => {
 
   // Reset loading state on component mount (handles OAuth redirects)
   useEffect(() => {
+    console.log('🔐 Debug: Auth component mounted');
+    console.log('🔐 Debug: Current URL:', window.location.href);
+    console.log('🔐 Debug: URL origin:', window.location.origin);
     setLoading(false);
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log('🔐 Debug: Email login attempt started');
+    console.log('🔐 Debug: Email provided:', email);
+
     if (!email.trim()) {
+      console.log('🔐 Debug: Email validation failed - empty email');
       setMessage('Please enter a valid email address');
       return;
     }
@@ -22,6 +29,7 @@ const Auth: React.FC = () => {
     try {
       setLoading(true);
       setMessage('');
+      console.log('🔐 Debug: Calling supabase.auth.signInWithOtp...');
 
       const { error } = await supabase.auth.signInWithOtp({
         email: email.trim(),
@@ -30,14 +38,18 @@ const Auth: React.FC = () => {
         }
       });
 
+      console.log('🔐 Debug: Supabase response received');
+
       if (error) {
-        console.error('Email auth error:', error);
+        console.error('❌ Debug: Email auth error:', error);
+        console.error('❌ Debug: Error details:', error.message, error.status);
         setMessage(`Email authentication failed: ${error.message}`);
       } else {
+        console.log('✅ Debug: Email auth successful - magic link sent');
         setMessage('Check your email for a login link!');
       }
     } catch (err) {
-      console.error('Unexpected error during email auth:', err);
+      console.error('❌ Debug: Unexpected error during email auth:', err);
       setMessage('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -46,6 +58,7 @@ const Auth: React.FC = () => {
 
   const handleGoogleAuth = async () => {
     try {
+      console.log('🔐 Debug: Google OAuth attempt started');
       setLoading(true);
       setMessage('');
 
@@ -56,26 +69,30 @@ const Auth: React.FC = () => {
         }
       });
 
-      console.log('OAuth data:', data);
-      console.log('OAuth error:', error);
+      console.log('🔐 Debug: Google OAuth response received');
+      console.log('🔐 Debug: OAuth data:', data);
+      console.log('🔐 Debug: OAuth error:', error);
 
       if (error) {
-        console.error('Google auth error:', error);
-        console.error('Error details:', error.message, error.status);
+        console.error('❌ Debug: Google auth error:', error);
+        console.error('❌ Debug: Error details:', error.message, error.status);
         setMessage(`Google authentication failed: ${error.message}`);
         setLoading(false);
         return;
       }
 
       if (!data.url) {
+        console.error('❌ Debug: No OAuth URL received from Supabase');
         setMessage('Failed to get Google authentication URL');
         setLoading(false);
         return;
       }
 
+      console.log('✅ Debug: Google OAuth URL received, redirecting...');
+      console.log('🔐 Debug: Redirect URL:', data.url);
       // Redirect will happen automatically
     } catch (err) {
-      console.error('Unexpected error during Google auth:', err);
+      console.error('❌ Debug: Unexpected error during Google auth:', err);
       setMessage('An unexpected error occurred. Please try again.');
       setLoading(false);
     }

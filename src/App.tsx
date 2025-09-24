@@ -3,6 +3,7 @@ import type { Bill, Subscription } from './types';
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import Auth from './components/Auth';
+import ErrorBoundary from './components/ErrorBoundary';
 import { supabase } from './services/supabase';
 import * as db from './services/db';
 import type { Session } from '@supabase/supabase-js';
@@ -16,41 +17,72 @@ const App: React.FC = () => {
 
   // Handle Auth State
   useEffect(() => {
+    console.log('🔧 Debug: App component mounted, checking auth session...');
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔧 Debug: Initial session check completed');
+      console.log('🔧 Debug: Session exists:', !!session);
+      console.log('🔧 Debug: User ID:', session?.user?.id || 'No user');
       setSession(session);
       setIsLoading(false); // Initial load is just auth check
     });
 
     const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🔧 Debug: Auth state changed');
+      console.log('🔧 Debug: Event:', _event);
+      console.log('🔧 Debug: New session exists:', !!session);
+      console.log('🔧 Debug: New user ID:', session?.user?.id || 'No user');
       setSession(session);
     });
 
     return () => {
+      console.log('🔧 Debug: Cleaning up auth listener');
       authListener?.unsubscribe();
     };
   }, []);
   
   // Load data from local DB and sync with remote
   const loadAndSyncData = useCallback(async (user_id: string) => {
+    console.log('🔄 Debug: Starting data sync for user:', user_id);
     setIsSyncing(true);
-    
-    // 1. Fetch remote data from Supabase
-    const [billsResponse, subsResponse] = await Promise.all([
-      supabase.from('bills').select('*').eq('user_id', user_id),
-      supabase.from('subscriptions').select('*').eq('user_id', user_id),
-    ]);
-    
-    // 2. Sync remote data to IndexedDB
-    if (billsResponse.data) await db.syncBills(billsResponse.data as Bill[]);
-    if (subsResponse.data) await db.syncSubscriptions(subsResponse.data as Subscription[]);
 
-    // 3. Load data from IndexedDB to state
-    const localBills = await db.getAllBills();
-    const localSubs = await db.getAllSubscriptions();
-    setBills(localBills);
-    setSubscriptions(localSubs);
+    try {
+      // 1. Fetch remote data from Supabase
+      console.log('🔄 Debug: Fetching remote data from Supabase...');
+      const [billsResponse, subsResponse] = await Promise.all([
+        supabase.from('bills').select('*').eq('user_id', user_id),
+        supabase.from('subscriptions').select('*').eq('user_id', user_id),
+      ]);
 
-    setIsSyncing(false);
+      console.log('🔄 Debug: Supabase responses received');
+      console.log('🔄 Debug: Bills response:', billsResponse);
+      console.log('🔄 Debug: Subscriptions response:', subsResponse);
+
+      // 2. Sync remote data to IndexedDB
+      if (billsResponse.data) {
+        console.log('🔄 Debug: Syncing bills to IndexedDB:', billsResponse.data.length, 'records');
+        await db.syncBills(billsResponse.data as Bill[]);
+      }
+      if (subsResponse.data) {
+        console.log('🔄 Debug: Syncing subscriptions to IndexedDB:', subsResponse.data.length, 'records');
+        await db.syncSubscriptions(subsResponse.data as Subscription[]);
+      }
+
+      // 3. Load data from IndexedDB to state
+      console.log('🔄 Debug: Loading data from IndexedDB...');
+      const localBills = await db.getAllBills();
+      const localSubs = await db.getAllSubscriptions();
+      console.log('🔄 Debug: Local data loaded - Bills:', localBills.length, 'Subscriptions:', localSubs.length);
+
+      setBills(localBills);
+      setSubscriptions(localSubs);
+
+      console.log('✅ Debug: Data sync completed successfully');
+    } catch (error) {
+      console.error('❌ Debug: Error during data sync:', error);
+    } finally {
+      setIsSyncing(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -131,29 +163,31 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header session={session} />
-        {!session ? (
-            <Auth />
-        ) : (
-            <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
-                {isSyncing ? (
-                    <div className="text-center pt-16 text-muted-light dark:text-muted-dark">Syncing your data...</div>
-                ) : (
-                    <Dashboard
-                        key={session.user.id}
-                        user={session.user}
-                        bills={bills}
-                        subscriptions={subscriptions}
-                        onSaveBill={handleSaveBill}
-                        onDeleteBill={handleDeleteBill}
-                        onSaveSubscription={handleSaveSubscription}
-                        onDeleteSubscription={handleDeleteSubscription}
-                    />
-                )}
-            </main>
-        )}
-    </div>
+    <ErrorBoundary>
+      <div className="flex min-h-screen flex-col">
+        <Header session={session} />
+          {!session ? (
+              <Auth />
+          ) : (
+              <main className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+                  {isSyncing ? (
+                      <div className="text-center pt-16 text-muted-light dark:text-muted-dark">Syncing your data...</div>
+                  ) : (
+                      <Dashboard
+                          key={session.user.id}
+                          user={session.user}
+                          bills={bills}
+                          subscriptions={subscriptions}
+                          onSaveBill={handleSaveBill}
+                          onDeleteBill={handleDeleteBill}
+                          onSaveSubscription={handleSaveSubscription}
+                          onDeleteSubscription={handleDeleteSubscription}
+                      />
+                  )}
+              </main>
+          )}
+      </div>
+    </ErrorBoundary>
   );
 };
 
